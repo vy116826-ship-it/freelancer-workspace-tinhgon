@@ -91,6 +91,15 @@ import {
 import { openContractPrint } from './utils/contractPrint.js';
 import { getBreadcrumbContextLabel } from './utils/breadcrumbLabels.js';
 import { labelDemoStatus, TASK_COLUMN_STATUSES } from './utils/demoStatusLabels.js';
+// ─── Integration components ────────────────────────
+import ServiceHealthDashboard from './components/integrations/ServiceHealthDashboard.jsx';
+import N8NWorkflowPanel from './components/integrations/N8NWorkflowPanel.jsx';
+import EspoCRMPanel from './components/integrations/EspoCRMPanel.jsx';
+import MauticCampaignPanel from './components/integrations/MauticCampaignPanel.jsx';
+import MemosPanel from './components/integrations/MemosPanel.jsx';
+import AppsmithEmbed from './components/integrations/AppsmithEmbed.jsx';
+import InfrastructurePanel from './components/integrations/InfrastructurePanel.jsx';
+import GlancesMonitor from './components/integrations/GlancesMonitor.jsx';
 
 const DEFAULT_CONTEXT = {
   dashboard: 'overview',
@@ -118,6 +127,15 @@ const RAIL_ITEMS = [
   { id: 'contracts', label: 'Hợp đồng', icon: FileSignature, perm: 'contracts' },
   { id: 'collaborators', label: 'Cộng tác viên', icon: Handshake, perm: 'collaborators' },
   { id: 'settings', label: 'Cài đặt', icon: Settings, perm: 'settings' },
+  // ─── Integration tabs ────────────────────────────
+  { id: 'health', label: 'Hệ thống', icon: Activity, perm: 'dashboard' },
+  { id: 'n8n', label: 'Automation', icon: Activity, perm: 'dashboard' },
+  { id: 'crmSync', label: 'CRM', icon: Users, perm: 'crm' },
+  { id: 'mautic', label: 'Marketing', icon: Mail, perm: 'dashboard' },
+  { id: 'memos', label: 'Ghi chú', icon: FileText, perm: 'dashboard' },
+  { id: 'appsmith', label: 'Dashboard', icon: Activity, perm: 'dashboard' },
+  { id: 'infra', label: 'Hạ tầng', icon: Server, perm: 'dashboard' },
+  { id: 'monitoring', label: 'Giám sát', icon: Activity, perm: 'dashboard' },
 ];
 
 const TAB_PERM_MAP = {
@@ -1746,6 +1764,15 @@ export default function ThompBui() {
       case 'contracts': return renderContracts();
       case 'collaborators': return renderCollaborators();
       case 'settings': return <SettingsPanel contextKey={contextKey} onSaved={showToast} />;
+      // ─── Integration panels ────────────────────────
+      case 'health': return <ServiceHealthDashboard />;
+      case 'n8n': return <N8NWorkflowPanel />;
+      case 'crmSync': return <EspoCRMPanel />;
+      case 'mautic': return <MauticCampaignPanel />;
+      case 'memos': return <MemosPanel />;
+      case 'appsmith': return <AppsmithEmbed />;
+      case 'infra': return <InfrastructurePanel />;
+      case 'monitoring': return <GlancesMonitor />;
       default: return renderDashboard();
     }
   };
