@@ -10,7 +10,7 @@ export default function ProtectedRoute({ children }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Check if disaster recovery backup login is requested via URL parameter
-  const isBackupMode = window.location.search.includes('backup') || window.location.search.includes('mode=backup');
+  const isBackupMode = window.location.href.includes('backup') || window.location.href.includes('mode=backup');
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !isBackupMode) {
