@@ -94,7 +94,9 @@ app.post('/api/employees', async (req, res) => {
   try {
     const username = email.split('@')[0] + '-' + Math.random().toString(36).substring(2, 6);
     
-    // 1. Create OIDC user account in Authentik core
+    const targetGroupUuid = ROLE_GROUPS[role || 'freelancer'];
+    
+    // 1. Create OIDC user account in Authentik core with groups assigned directly
     const newAkUser = await akRequest('/api/v3/core/users/', {
       method: 'POST',
       body: JSON.stringify({
@@ -102,20 +104,12 @@ app.post('/api/employees', async (req, res) => {
         name: name,
         email: email,
         is_active: true,
-        path: 'users'
+        path: 'users',
+        groups: targetGroupUuid ? [targetGroupUuid] : []
       })
     });
     
     const userId = newAkUser.pk;
-    const targetGroupUuid = ROLE_GROUPS[role || 'freelancer'];
-    
-    // 2. Map user to the correct OIDC role group
-    if (targetGroupUuid) {
-      await akRequest(`/api/v3/core/groups/${targetGroupUuid}/users/`, {
-        method: 'POST',
-        body: JSON.stringify({ users: [userId] })
-      });
-    }
     
     res.status(201).json({
       id: userId,
@@ -166,24 +160,23 @@ app.put('/api/employees/:id/role', async (req, res) => {
   }
   
   try {
-    // 1. Remove user from all other workspace groups
-    for (const groupKey in ROLE_GROUPS) {
-      const groupUuid = ROLE_GROUPS[groupKey];
-      try {
-        await akRequest(`/api/v3/core/groups/${groupUuid}/users/`, {
-          method: 'DELETE',
-          body: JSON.stringify({ users: [parseInt(userId)] })
-        });
-      } catch (e) {
-        // user might not be in this group, ignore error safely
-      }
+    // 1. Fetch user's current groups to avoid removing other non-workspace groups
+    const userObj = await akRequest(`/api/v3/core/users/${userId}/`);
+    const currentGroups = userObj.groups || [];
+    
+    // 2. Filter out all workspace-related groups
+    const cleanGroups = currentGroups.filter(gUuid => !Object.values(ROLE_GROUPS).includes(gUuid));
+    
+    // 3. Add the target workspace group
+    const targetGroupUuid = ROLE_GROUPS[role];
+    if (targetGroupUuid) {
+      cleanGroups.push(targetGroupUuid);
     }
     
-    // 2. Add user to the new role group
-    const targetGroupUuid = ROLE_GROUPS[role];
-    await akRequest(`/api/v3/core/groups/${targetGroupUuid}/users/`, {
-      method: 'POST',
-      body: JSON.stringify({ users: [parseInt(userId)] })
+    // 4. Update the user's groups in a single robust PATCH call
+    await akRequest(`/api/v3/core/users/${userId}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ groups: cleanGroups })
     });
     
     res.json({ message: 'Role assigned successfully', role });
@@ -198,23 +191,20 @@ app.delete('/api/employees/:id', async (req, res) => {
   const userId = req.params.id;
   
   try {
-    // Remove user membership from all workspace role groups
-    for (const groupKey in ROLE_GROUPS) {
-      const groupUuid = ROLE_GROUPS[groupKey];
-      try {
-        await akRequest(`/api/v3/core/groups/${groupUuid}/users/`, {
-          method: 'DELETE',
-          body: JSON.stringify({ users: [parseInt(userId)] })
-        });
-      } catch (e) {
-        // safe ignore
-      }
-    }
+    // 1. Fetch user's current groups to avoid removing other non-workspace groups
+    const userObj = await akRequest(`/api/v3/core/users/${userId}/`);
+    const currentGroups = userObj.groups || [];
     
-    // De-provision / deactivate account in Authentik
+    // 2. Filter out all workspace-related groups
+    const cleanGroups = currentGroups.filter(gUuid => !Object.values(ROLE_GROUPS).includes(gUuid));
+    
+    // 3. Update groups and de-provision / deactivate account in Authentik in a single PATCH call
     await akRequest(`/api/v3/core/users/${userId}/`, {
       method: 'PATCH',
-      body: JSON.stringify({ is_active: false })
+      body: JSON.stringify({
+        groups: cleanGroups,
+        is_active: false
+      })
     });
     
     res.status(204).end();
