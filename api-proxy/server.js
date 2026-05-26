@@ -54,15 +54,14 @@ app.get('/api/employees', async (req, res) => {
     for (const u of users) {
       if (u.type === 'internal_service_account' || u.username === 'AnonymousUser') continue;
       
-      // Determine in-workspace role based on ak_groups membership lists
+      // Determine in-workspace role based on groups_obj membership lists
+      const groupNames = u.groups_obj ? u.groups_obj.map(g => g.name) : [];
       let role = 'freelancer';
-      if (u.ak_groups_by_name) {
-        if (u.ak_groups_by_name.includes('workspace-owner')) role = 'owner';
-        else if (u.ak_groups_by_name.includes('workspace-client')) role = 'client';
-      }
+      if (groupNames.includes('workspace-owner')) role = 'owner';
+      else if (groupNames.includes('workspace-client')) role = 'client';
       
       // Filter out users who do not belong to any workspace groups
-      const belongsToWorkspace = u.ak_groups_by_name && u.ak_groups_by_name.some(gname => 
+      const belongsToWorkspace = groupNames.some(gname => 
         ['workspace-owner', 'workspace-freelancer', 'workspace-client'].includes(gname)
       );
       
