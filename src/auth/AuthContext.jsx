@@ -28,6 +28,20 @@ export function AuthProvider({ children }) {
 
   // Initialize Auth State from sessionStorage
   const initAuth = useCallback(() => {
+    // Check backup local session first
+    const backupUserStr = sessionStorage.getItem('workspace_backup_user');
+    if (backupUserStr) {
+      try {
+        const backupUser = JSON.parse(backupUserStr);
+        setUser(backupUser);
+        setIsAuthenticated(true);
+        setIsLoading(false);
+        return;
+      } catch (e) {
+        sessionStorage.removeItem('workspace_backup_user');
+      }
+    }
+
     const idToken = sessionStorage.getItem('workspace_id_token');
     const accessToken = sessionStorage.getItem('workspace_access_token');
     
@@ -120,9 +134,15 @@ export function AuthProvider({ children }) {
   // Log out session
   const logout = useCallback(() => {
     const idToken = sessionStorage.getItem('workspace_id_token');
+    const isBackup = sessionStorage.getItem('workspace_backup_user') !== null;
     sessionStorage.clear();
     setUser(null);
     setIsAuthenticated(false);
+
+    if (isBackup) {
+      window.location.href = '/';
+      return;
+    }
 
     // Redirect to Authentik logout endpoint
     let url = `${AUTH_CONFIG.authority}/application/o/workspace/end-session/`;
@@ -132,13 +152,36 @@ export function AuthProvider({ children }) {
     window.location.href = url;
   }, []);
 
+  // Backup administrator login bypassing OIDC/Authentik
+  const backupLogin = useCallback((username, password) => {
+    const expectedUser = import.meta.env.VITE_BACKUP_ADMIN_USERNAME || 'backupadmin';
+    const expectedPass = import.meta.env.VITE_BACKUP_ADMIN_PASSWORD || 'Tinhgon@2026Backup';
+
+    if (username === expectedUser && password === expectedPass) {
+      const backupUser = {
+        id: 'backup-admin-id',
+        name: 'Backup Administrator',
+        email: 'backup@tinhgon.com',
+        role: 'owner',
+        groups: ['workspace-owner'],
+        isBackup: true
+      };
+      sessionStorage.setItem('workspace_backup_user', JSON.stringify(backupUser));
+      setUser(backupUser);
+      setIsAuthenticated(true);
+      return true;
+    }
+    return false;
+  }, []);
+
   const value = {
     user,
     isAuthenticated,
     isLoading,
     login,
     logout,
-    handleCallback
+    handleCallback,
+    backupLogin
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
