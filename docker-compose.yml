@@ -1,0 +1,36 @@
+services:
+  freelancer-workspace:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: freelancer_workspace
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://workspace_user:c0UQ0Tov80BgwVfF4xJ3Zy2cRYxVFtWu@n8n-docker-postgres-1:5432/freelancer_workspace_db
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_API_BASE=https://api.openai.com/v1
+      - DEFAULT_LOCALE=vi
+    ports:
+      - "127.0.0.1:8089:80"
+    networks:
+      - sysadmin_net
+
+  api-proxy:
+    build:
+      context: ./api-proxy
+      dockerfile: Dockerfile
+    container_name: workspace_api_proxy
+    restart: always
+    environment:
+      - PORT=3001
+      - AUTHENTIK_URL=http://authentik-server:9000
+      - AUTHENTIK_API_TOKEN=kQN665CvKdYR1yycvROb0UmtmK9WBjOT6ux3TwiROT8Tujq06MoYHQcuZ3mi
+    ports:
+      - "127.0.0.1:8091:3001"
+    networks:
+      - sysadmin_net
+
+networks:
+  sysadmin_net:
+    external: true

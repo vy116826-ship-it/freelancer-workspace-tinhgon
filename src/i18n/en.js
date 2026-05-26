@@ -50,6 +50,7 @@ export default {
     save: 'Save configuration',
     savedAi: 'AI API settings saved.',
     aiNav: 'AI API & Search',
+    employees: 'Employee Management',
   },
   search: {
     placeholder: 'Ask AI: revenue, deadlines…',

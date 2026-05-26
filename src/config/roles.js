@@ -17,6 +17,23 @@ export function getPersona(userId) {
   return DEMO_PERSONAS.find((p) => p.id === userId) ?? DEMO_PERSONAS[0];
 }
 
+// Maps user groups received from Authentik OIDC ID token claims to internally recognized roles
+export function mapAuthentikGroupToRole(groups) {
+  if (!groups || !Array.isArray(groups)) return ROLES.freelancer; // default safe fallback
+  if (groups.includes('workspace-owner')) return ROLES.owner;
+  if (groups.includes('workspace-client')) return ROLES.client;
+  if (groups.includes('workspace-freelancer')) return ROLES.freelancer;
+  
+  // Backwards compatibility / loose matching
+  for (const g of groups) {
+    const gl = g.toLowerCase();
+    if (gl.includes('owner') || gl.includes('admin')) return ROLES.owner;
+    if (gl.includes('client') || gl.includes('customer')) return ROLES.client;
+    if (gl.includes('freelancer') || gl.includes('developer') || gl.includes('member') || gl.includes('staff')) return ROLES.freelancer;
+  }
+  return ROLES.freelancer;
+}
+
 export function getPermissions(role) {
   const isOwner = role === ROLES.owner;
   const isFreelancer = role === ROLES.freelancer;

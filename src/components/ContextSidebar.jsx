@@ -247,6 +247,11 @@ export default function ContextSidebar({
             <NavItem active={contextKey === 'ai'} onClick={() => setContextKey('ai')}>
               {t('settings.aiNav')}
             </NavItem>
+            {perms.settings && (
+              <NavItem active={contextKey === 'employees'} onClick={() => setContextKey('employees')}>
+                {t('settings.employees')}
+              </NavItem>
+            )}
           </Section>
         );
 

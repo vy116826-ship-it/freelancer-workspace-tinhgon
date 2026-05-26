@@ -50,6 +50,7 @@ export default {
     save: 'Lưu cấu hình',
     savedAi: 'Đã lưu cấu hình API AI.',
     aiNav: 'API AI & Tìm kiếm',
+    employees: 'Quản lý Nhân viên',
   },
   search: {
     placeholder: 'Hỏi AI: tổng tiền, sắp hết hạn…',

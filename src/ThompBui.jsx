@@ -91,6 +91,7 @@ import {
 import { openContractPrint } from './utils/contractPrint.js';
 import { getBreadcrumbContextLabel } from './utils/breadcrumbLabels.js';
 import { labelDemoStatus, TASK_COLUMN_STATUSES } from './utils/demoStatusLabels.js';
+import { useAuth } from './auth/AuthContext.jsx';
 
 const DEFAULT_CONTEXT = {
   dashboard: 'overview',
@@ -160,7 +161,12 @@ function getPersonaColor(userId) {
 
 export default function ThompBui() {
   const { t } = useAppPreferences();
-  const [currentUserId, setCurrentUserId] = useState('u-owner');
+  const { user } = useAuth();
+  
+  // Maps user id/email and role dynamically from Authentik SSO claims
+  const currentUserId = user ? user.id : 'u-owner';
+  const userRole = user ? user.role : ROLES.owner;
+
   const [isCoffeeOpen, setIsCoffeeOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [activeProjectId, setActiveProjectId] = useState(null);
@@ -194,9 +200,9 @@ export default function ThompBui() {
   const [isContextCollapsed, setIsContextCollapsed] = useState(false);
   const [listPage, setListPage] = useState(1);
 
-  const persona = getPersona(currentUserId);
-  const perms = getPermissions(persona.role);
-  const visibleProjects = filterProjectsForUser(projects, currentUserId, persona.role);
+  const persona = user ? { id: user.id, role: user.role, name: user.name, subtitle: user.email } : getPersona(currentUserId);
+  const perms = getPermissions(userRole);
+  const visibleProjects = filterProjectsForUser(projects, currentUserId, userRole);
   const clientProjects = visibleProjects.filter((p) => p.type === 'client');
   const partnershipProjects = visibleProjects.filter((p) => p.type === 'partnership');
 
